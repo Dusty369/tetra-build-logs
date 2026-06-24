@@ -248,6 +248,7 @@ export default function ReviewPage() {
             min="0"
             value={hoursOnSite}
             onChange={(e) => setHoursOnSite(e.target.value)}
+            placeholder="Enter hours manually"
             className="w-full bg-zinc-800 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-zinc-600"
           />
         </div>
