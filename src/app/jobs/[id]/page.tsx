@@ -98,11 +98,19 @@ export default async function JobPage({ params }: { params: { id: string } }) {
               <div key={entry.id} className="bg-zinc-900 rounded-xl px-4 py-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-medium text-sm">{formatDate(entry.date)}</p>
-                  {entry.hoursOnSite && (
-                    <span className="text-xs bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-300">
-                      {entry.hoursOnSite.toString()} hrs
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {entry.hoursOnSite && (
+                      <span className="text-xs bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-300">
+                        {entry.hoursOnSite.toString()} hrs
+                      </span>
+                    )}
+                    <Link
+                      href={`/log/${entry.id}/edit`}
+                      className="text-xs text-zinc-500 hover:text-zinc-300"
+                    >
+                      Edit
+                    </Link>
+                  </div>
                 </div>
 
                 {(entry.arrivalTime || entry.departureTime) && (

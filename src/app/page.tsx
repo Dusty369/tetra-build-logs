@@ -56,6 +56,13 @@ export default async function Home() {
       </section>
 
       <RecordButton />
+
+      <Link
+        href="/log/new"
+        className="fixed bottom-8 left-4 bg-zinc-800 text-zinc-300 text-xs font-medium px-3 py-2 rounded-full active:bg-zinc-700 transition-colors"
+      >
+        + Add manually
+      </Link>
     </main>
   );
 }
