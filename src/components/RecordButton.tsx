@@ -30,10 +30,41 @@ export default function RecordButton() {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         const form = new FormData();
         form.append("audio", blob, "recording.webm");
+
+        const coordsPromise = new Promise<{ lat: number; lng: number } | null>(
+          (resolve) => {
+            try {
+              if (!navigator.geolocation) {
+                resolve(null);
+                return;
+              }
+              // Geolocation requires HTTPS in production (works on Railway and localhost)
+              navigator.geolocation.getCurrentPosition(
+                (pos) =>
+                  resolve({
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                  }),
+                () => resolve(null),
+                { timeout: 8000 }
+              );
+            } catch {
+              resolve(null);
+            }
+          }
+        );
+
         try {
-          const res = await fetch("/api/log", { method: "POST", body: form });
+          // Run upload and geolocation in parallel
+          const [res, coords] = await Promise.all([
+            fetch("/api/log", { method: "POST", body: form }),
+            coordsPromise,
+          ]);
           const data = await res.json();
-          sessionStorage.setItem("pendingLog", JSON.stringify(data));
+          sessionStorage.setItem(
+            "pendingLog",
+            JSON.stringify({ ...data, _coords: coords })
+          );
           router.push("/review");
         } catch {
           setState("idle");

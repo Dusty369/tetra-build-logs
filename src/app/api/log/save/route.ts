@@ -12,6 +12,8 @@ interface SaveBody {
   notes?: string;
   materialsToOrder?: string[];
   rawTranscript?: string;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -37,9 +39,31 @@ export async function POST(req: NextRequest) {
       const existing = await prisma.job.findFirst({ where: { name: jobName } });
       if (existing) {
         jobId = existing.id;
+        if (body.lat != null && body.lng != null && existing.latitude == null) {
+          await prisma.job.update({
+            where: { id: existing.id },
+            data: { latitude: body.lat, longitude: body.lng },
+          });
+        }
       } else {
-        const created = await prisma.job.create({ data: { name: jobName } });
+        const created = await prisma.job.create({
+          data: {
+            name: jobName,
+            latitude: body.lat ?? null,
+            longitude: body.lng ?? null,
+          },
+        });
         jobId = created.id;
+      }
+    } else {
+      if (body.lat != null && body.lng != null) {
+        const job = await prisma.job.findUnique({ where: { id: jobId } });
+        if (job && job.latitude == null) {
+          await prisma.job.update({
+            where: { id: jobId },
+            data: { latitude: body.lat, longitude: body.lng },
+          });
+        }
       }
     }
 

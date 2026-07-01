@@ -19,6 +19,8 @@ model Job {
   address    String?
   client     String?
   status     JobStatus @default(ACTIVE)
+  latitude   Float?
+  longitude  Float?
   createdAt  DateTime  @default(now())
 
   logEntries LogEntry[]

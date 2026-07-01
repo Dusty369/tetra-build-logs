@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import LogEntryForm, { LogEntryPayload } from "@/components/LogEntryForm";
+import { haversineMetres } from "@/lib/haversine";
 
 interface ExtractedLog {
   jobName: string | null;
@@ -20,6 +21,8 @@ interface JobOption {
   id: string;
   name: string;
   status: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 function toTimeInput(iso: string | null): string {
@@ -48,17 +51,52 @@ export default function ReviewPage() {
   const [log, setLog] = useState<ExtractedLog | null>(null);
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [saving, setSaving] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+  const [gpsMatchedJob, setGpsMatchedJob] = useState<JobOption | null>(null);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("pendingLog");
+    let parsedCoords: { lat: number; lng: number } | null = null;
     if (raw) {
-      const parsed: ExtractedLog = JSON.parse(raw);
-      setLog(parsed);
+      const parsed = JSON.parse(raw) as ExtractedLog & {
+        _coords?: { lat: number; lng: number } | null;
+      };
+      const { _coords, ...rest } = parsed;
+      setLog(rest as ExtractedLog);
+      if (_coords) {
+        setCoords(_coords);
+        parsedCoords = _coords;
+      }
     }
 
     fetch("/api/jobs")
       .then((r) => r.json())
-      .then(setJobs)
+      .then((fetchedJobs: JobOption[]) => {
+        setJobs(fetchedJobs);
+
+        if (parsedCoords && fetchedJobs.length > 0) {
+          let nearest: JobOption | null = null;
+          let nearestDist = Infinity;
+          for (const job of fetchedJobs) {
+            if (job.latitude == null || job.longitude == null) continue;
+            const d = haversineMetres(
+              parsedCoords.lat,
+              parsedCoords.lng,
+              job.latitude,
+              job.longitude
+            );
+            if (d < nearestDist) {
+              nearestDist = d;
+              nearest = job;
+            }
+          }
+          if (nearest && nearestDist <= 150) {
+            setGpsMatchedJob(nearest);
+          }
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -71,6 +109,8 @@ export default function ReviewPage() {
         body: JSON.stringify({
           ...payload,
           rawTranscript: log?.rawTranscript ?? null,
+          lat: coords?.lat ?? null,
+          lng: coords?.lng ?? null,
         }),
       });
       const data = await res.json();
@@ -103,13 +143,15 @@ export default function ReviewPage() {
 
       <LogEntryForm
         jobs={jobs}
-        initialJobName={log.jobName ?? ""}
+        initialJobId={gpsMatchedJob?.id}
+        initialJobName={gpsMatchedJob ? gpsMatchedJob.name : (log.jobName ?? "")}
         initialDate={toDateInput(log.date)}
         initialArrival={toTimeInput(log.arrivalTime)}
         initialDeparture={toTimeInput(log.departureTime)}
         initialHours={log.hoursOnSite ?? ""}
         initialNotes={log.notes ?? ""}
         initialMaterials={log.materialsToOrder ?? []}
+        locationMatched={!!gpsMatchedJob}
         onSave={handleSave}
         saving={saving}
       />

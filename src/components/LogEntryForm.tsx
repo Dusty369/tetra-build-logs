@@ -17,6 +17,8 @@ interface JobOption {
   id: string;
   name: string;
   status: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface LogEntryFormProps {
@@ -29,6 +31,7 @@ export interface LogEntryFormProps {
   initialHours?: string;
   initialNotes?: string;
   initialMaterials?: string[];
+  locationMatched?: boolean;
   onSave: (payload: LogEntryPayload) => Promise<void>;
   onDelete?: () => Promise<void>;
   saving: boolean;
@@ -58,6 +61,7 @@ export default function LogEntryForm({
   initialHours = "",
   initialNotes = "",
   initialMaterials = [],
+  locationMatched,
   onSave,
   onDelete,
   saving,
@@ -149,6 +153,9 @@ export default function LogEntryForm({
             placeholder="Search or create job…"
             className="w-full bg-zinc-800 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-zinc-600"
           />
+          {locationMatched && (
+            <p className="text-xs text-blue-400 mt-1">Matched by location</p>
+          )}
           {showDropdown && (
             <div className="absolute z-10 mt-1 w-full bg-zinc-800 rounded-lg shadow-xl overflow-hidden border border-zinc-700">
               {filteredJobs.map((j) => (
